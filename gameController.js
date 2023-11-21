@@ -165,7 +165,6 @@ function movePiece(piece, startingPosition, endingPosition) {
                     const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
                     destinationSquare.textContent = '';
                     destinationSquare.appendChild(piece);
-                    
                     // check if is check/checkmate
                     if (curPlayer == 'white') {
                         curPlayer = 'black';
@@ -319,9 +318,8 @@ function validatePathIsBlocked(startingPosition, endingPosition, kishCheck = fal
     let squareY = startingPosition[1] + yDirection;
 
     while (squareX != endingPosition[0] || squareY != endingPosition[1]) {
-        const isSquareOccupied = document.getElementById(`${squareX + 1}${squareY + 1}`).children.length > 0;
-
-        if (isSquareOccupied) {
+        const isOccupied = curBoard[squareX][squareY] != '.';
+        if (isOccupied){
             return false;
         }
 
@@ -334,19 +332,15 @@ function validatePathIsBlocked(startingPosition, endingPosition, kishCheck = fal
     } else {
         // enemy piece has been captured
     }
-
     return true;
 }
 
 function isFriendlyPieceOnEndingPosition(endingPosition, kishCheck = false) {
-    const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
-    if (destinationSquare.children.length > 0) {
-        const destinationPiece = destinationSquare.querySelector('.piece').id;
-        const boardPiece = curBoard[endingPosition[0]][endingPosition[1]]
+    const boardPiece = curBoard[endingPosition[0]][endingPosition[1]];
+    if (boardPiece != '.'){
         if (!kishCheck){
             if (boardPiece == boardPiece.toUpperCase() && curPlayer == 'black' ||
                 boardPiece == boardPiece.toLowerCase() && curPlayer == 'white') {
-                    console.log(destinationPiece, curPlayer);
                     return true;
             } else {
                 return false;
@@ -355,7 +349,6 @@ function isFriendlyPieceOnEndingPosition(endingPosition, kishCheck = false) {
         else {
             if (boardPiece == boardPiece.toUpperCase() && curPlayer == 'black' ||
                 boardPiece == boardPiece.toLowerCase() && curPlayer == 'white') {
-                    console.log("yes");
                     return false;
             } else {
                 return true;
@@ -367,22 +360,19 @@ function isFriendlyPieceOnEndingPosition(endingPosition, kishCheck = false) {
 }
 
 function isEnemyPieceOnEndingPosition(endingPosition, kishCheck = false) {
-    const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
-
-    if (destinationSquare.children.length > 0) {
-        const destinationPiece = destinationSquare.querySelector('.piece').id;
-        const boardPiece = curBoard[endingPosition[0]][endingPosition[1]]
+    const boardPiece = curBoard[endingPosition[0]][endingPosition[1]];
+    if (boardPiece != '.') {
         if (!kishCheck){
-            if (destinationPiece == destinationPiece.toUpperCase() && curPlayer == 'white' ||
-                destinationPiece == destinationPiece.toLowerCase() && curPlayer == 'black') {
+            if (boardPiece == boardPiece.toUpperCase() && curPlayer == 'white' ||
+                boardPiece == boardPiece.toLowerCase() && curPlayer == 'black') {
                     return true;
             } else {
                 return false;
             }
         }
         else {
-            if (destinationPiece == destinationPiece.toUpperCase() && curPlayer == 'white' ||
-                destinationPiece == destinationPiece.toLowerCase() && curPlayer == 'black') {
+            if (boardPiece == boardPiece.toUpperCase() && curPlayer == 'white' ||
+                boardPiece == boardPiece.toLowerCase() && curPlayer == 'black') {
                     return false;
             } else {
                 return true;
