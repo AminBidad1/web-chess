@@ -165,8 +165,10 @@ function setPieceHoldEvents() {
 
 function movePiece(piece, startingPosition, endingPosition) {
     // move validations to validateMovement()
-    const boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
+    let boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
     let alreadyPiece;
+    let isPawnPromotion = false;
+    let backupPiece;
     if (boardPiece != '.') {
         if ((boardPiece === boardPiece.toUpperCase() && curPlayer == 'black') ||
             (boardPiece === boardPiece.toLowerCase() && curPlayer == 'white')) {
@@ -186,16 +188,30 @@ function movePiece(piece, startingPosition, endingPosition) {
                     }
                 }
                 else {
+                    const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
+                    if (PawnPromotion(endingPosition)){
+                        isPawnPromotion = true;
+                        backupPiece = curBoard[endingPosition[0]][endingPosition[1]];
+                    }
                     checkThreats();
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                     curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
                     kill(endingPosition);
+                    if (isPawnPromotion){
+                        boardPiece = backupPiece;
+                    }
                     curBoard[startingPosition[0]][startingPosition[1]] = '.';
                     curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                     showScore();
-                    const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
                     destinationSquare.textContent = '';
-                    destinationSquare.appendChild(piece);
+                    if (isPawnPromotion){
+                        const startingSquare = document.getElementById(`${startingPosition[0] + 1}${startingPosition[1] + 1}`);
+                        startingSquare.textContent = '';
+                        addPiece(backupPiece, endingPosition);
+                    }
+                    else {
+                        destinationSquare.appendChild(piece);
+                    }
                     // check if is check/checkmate
                     if (curPlayer == 'white') {
                         curPlayer = 'black';
@@ -615,6 +631,101 @@ function checkThreats(){
         }
         setScore(black_new_moment_score);
     }
+}
+
+function addPiece(piece, position){
+    const squareElement = document.getElementById(`${position[0]+1}${position[1]+1}`);
+
+    const pieceElement = document.createElement('img');
+    pieceElement.classList.add('piece');
+    pieceElement.id = piece;
+    pieceElement.draggable = false;
+    pieceElement.src = getPieceImageSource(piece);
+
+    squareElement.appendChild(pieceElement);
+    setPieceHoldEvents();
+    /*
+    let mouseX, mouseY = 0;
+    let hasIntervalStarted = false;
+    let movePieceInterval;
+    pieceElement.addEventListener('mousedown', function(event) {
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+    
+        if (hasIntervalStarted === false) {
+            pieceElement.style.position = 'absolute';
+
+            curHeldPiece = pieceElement;
+            const curHeldPieceStringPosition = pieceElement.parentElement.id.split('');
+
+            curHeldPieceStartingPosition = [parseInt(curHeldPieceStringPosition[0]) - 1, parseInt(curHeldPieceStringPosition[1]) - 1];
+
+            movePieceInterval = setInterval(function() {
+                pieceElement.style.top = mouseY - pieceElement.offsetHeight / 2 + window.scrollY + 'px';
+                pieceElement.style.left = mouseX - pieceElement.offsetWidth / 2 + window.scrollX + 'px';
+            }, 1);
+    
+            hasIntervalStarted = true;
+        }
+    });
+    */
+}
+
+function PawnPromotion(endingPosition){
+    let boardPiece = curBoard[endingPosition[0]][endingPosition[1]];
+    let selectedPiece;
+    let isValid = false
+    if (endingPosition[0] == 0 && boardPiece == 'p'){
+        while (!isValid){
+            isValid = true;
+            selectedPiece = prompt("please select a piece:\nQueen\nRook\nBishop\nknight", "Queen");
+            switch (selectedPiece) {
+                case 'Queen':
+                    curBoardcurBoard[endingPosition[0]][endingPosition[1]] = 'q';
+                    break;
+                case 'Rook':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'r';
+                    break;
+                case 'Bishop':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'b';
+                    break;
+                case 'Knight':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'n';
+                    break;
+                default:
+                    isValid = false;
+                    alert("please don't type spam");
+                    break;
+            }
+        }
+        return true;
+    }
+    else if (endingPosition[0] == 7 && boardPiece == 'P'){
+        while (!isValid){
+            isValid = true;
+            selectedPiece = prompt("please select a piece:\nQueen\nRook\nBishop\nknight", "Queen");
+            switch (selectedPiece) {
+                case 'Queen':
+                    curBoardcurBoard[endingPosition[0]][endingPosition[1]] = 'Q';
+                    break;
+                case 'Rook':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'R';
+                    break;
+                case 'Bishop':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'B';
+                    break;
+                case 'Knight':
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'N';
+                    break;
+                default:
+                    isValid = false;
+                    alert("please don't type spam");
+                    break;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 startGame();
