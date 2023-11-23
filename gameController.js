@@ -6,8 +6,6 @@ let curHeldPieceStartingPosition;
 
 let white_score = 0;
 let black_score = 0;
-let white_moment_score = 0;
-let black_moment_score = 0;
 let piecesThreatScores = {
     "P": 1,
     "N": 3,
@@ -178,6 +176,14 @@ function movePiece(piece, startingPosition, endingPosition) {
                 if (isKish()){
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                     curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
+                    if (isCheckMate()){
+                        if (curPlayer == "white"){
+                            alert("Black Won!");
+                        }
+                        else {
+                            alert("White Won!");
+                        }
+                    }
                 }
                 else {
                     checkThreats();
@@ -438,13 +444,72 @@ function setScore(value){
 }
 
 
-function endGame(endingPosition){
-    if (curBoard[endingPosition[0]][endingPosition[1]] == 'k'){
-        alert("Black Won!");
+function isCheckMate(){
+    let boardPiece;
+    let alreadyPiece;
+    if (curPlayer == "white"){
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toLowerCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                if (x != i || y != j){
+                                    if (validateMovement([i, j], [x, y])){
+                                        alreadyPiece = curBoard[x][y];
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                        if (isKish()){
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                        }
+                                        else {
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-    else if (curBoard[endingPosition[0]][endingPosition[1]] == 'K'){
-        alert("White Won!");
+    else {
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toUpperCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                if (x != i || y != j){
+                                    if (validateMovement([i, j], [x, y])){
+                                        alreadyPiece = curBoard[x][y];
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                        if (isKish()){
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                        }
+                                        else {
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+    return true;
 }
 
 
@@ -524,8 +589,7 @@ function checkThreats(){
                 }
             }
         }
-        setScore(white_new_moment_score - white_moment_score);
-        white_moment_score = white_new_moment_score;
+        setScore(white_new_moment_score);
     }
     else if (curPlayer == "black"){
         for (let i=0; i<8; i+=1){
@@ -549,8 +613,7 @@ function checkThreats(){
                 }
             }
         }
-        setScore(black_new_moment_score - black_moment_score);
-        black_moment_score = black_new_moment_score;
+        setScore(black_new_moment_score);
     }
 }
 
