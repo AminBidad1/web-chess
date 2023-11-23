@@ -4,17 +4,35 @@ let curPlayer;
 let curHeldPiece;
 let curHeldPieceStartingPosition;
 
-let piecesScores = {
+let white_score = 0;
+let black_score = 0;
+let piecesThreatScores = {
     "P": 1,
     "N": 3,
     "B": 3,
     "R": 5,
     "Q": 9,
+    "K": 10,
     "p": 1,
     "n": 3,
     "b": 3,
     "r": 5,
-    "q": 9
+    "q": 9,
+    "k": 10
+}
+let piecesKillScores = {
+    "P": 10,
+    "N": 30,
+    "B": 30,
+    "R": 50,
+    "Q": 90,
+    "K": 10000,
+    "p": 10,
+    "n": 30,
+    "b": 30,
+    "r": 50,
+    "q": 90,
+    "k": 10000,
 }
 
 function startGame() {
@@ -154,14 +172,27 @@ function movePiece(piece, startingPosition, endingPosition) {
             (boardPiece === boardPiece.toLowerCase() && curPlayer == 'white')) {
                 alreadyPiece = curBoard[endingPosition[0]][endingPosition[1]];
                 curBoard[startingPosition[0]][startingPosition[1]] = '.';
-                score(endingPosition);
-                endGame(endingPosition);
                 curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                 if (isKish()){
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                     curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
+                    if (isCheckMate()){
+                        if (curPlayer == "white"){
+                            alert("Black Won!");
+                        }
+                        else {
+                            alert("White Won!");
+                        }
+                    }
                 }
                 else {
+                    checkThreats();
+                    curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
+                    curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
+                    kill(endingPosition);
+                    curBoard[startingPosition[0]][startingPosition[1]] = '.';
+                    curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
+                    showScore();
                     const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
                     destinationSquare.textContent = '';
                     destinationSquare.appendChild(piece);
@@ -384,30 +415,101 @@ function isEnemyPieceOnEndingPosition(endingPosition, kishCheck = false) {
 }
 
 
-function score(endingPosition){
+function showScore(){
     let div_score;
     if (curPlayer == "white") {
         div_score = document.getElementById("white_score");
+        div_score.innerText = white_score;
     }
     else {
         div_score = document.getElementById("black_score");
+        div_score.innerText = black_score;
+    } 
+}
+
+function kill(endingPosition){
+    let enemyPiece = curBoard[endingPosition[0]][endingPosition[1]];
+    if (enemyPiece != '.'){
+        setScore(piecesKillScores[enemyPiece]);
     }
-    if (curBoard[endingPosition[0]][endingPosition[1]] != '.') {
-        let enemyPiece = curBoard[endingPosition[0]][endingPosition[1]];
-        if (enemyPiece in piecesScores){
-            div_score.innerText = Number(div_score.innerText) + piecesScores[enemyPiece];
-        }
+}
+
+function setScore(value){
+    if (curPlayer == "white") {
+        white_score += value;
+    }
+    else {
+        black_score += value;
     }
 }
 
 
-function endGame(endingPosition){
-    if (curBoard[endingPosition[0]][endingPosition[1]] == 'k'){
-        alert("Black Won!");
+function isCheckMate(){
+    let boardPiece;
+    let alreadyPiece;
+    if (curPlayer == "white"){
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toLowerCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                if (x != i || y != j){
+                                    if (validateMovement([i, j], [x, y])){
+                                        alreadyPiece = curBoard[x][y];
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                        if (isKish()){
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                        }
+                                        else {
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-    else if (curBoard[endingPosition[0]][endingPosition[1]] == 'K'){
-        alert("White Won!");
+    else {
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toUpperCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                if (x != i || y != j){
+                                    if (validateMovement([i, j], [x, y])){
+                                        alreadyPiece = curBoard[x][y];
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                        if (isKish()){
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                        }
+                                        else {
+                                            curBoard[i][j] = boardPiece;
+                                            curBoard[x][y] = alreadyPiece;
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+    return true;
 }
 
 
@@ -424,7 +526,7 @@ function isKish(){
         }
         for (let i=0; i<8; i+=1){
             for (let j=0; j<8; j+=1){
-                boardPiece = curBoard[i][j]
+                boardPiece = curBoard[i][j];
                 if (boardPiece != "."){
                     if (boardPiece === boardPiece.toUpperCase()){
                         if (validateMovement([i, j], king_position, kishCheck=true)){
@@ -446,7 +548,7 @@ function isKish(){
         }
         for (let i=0; i<8; i+=1){
             for (let j=0; j<8; j+=1){
-                boardPiece = curBoard[i][j]
+                boardPiece = curBoard[i][j];
                 if (boardPiece != "."){
                     if (boardPiece === boardPiece.toLowerCase()){
                         if (validateMovement([i, j], king_position, kishCheck=true)){
@@ -460,6 +562,60 @@ function isKish(){
     }
 }
 
+function checkThreats(){
+    let boardPiece;
+    let enemyPiece;
+    let white_new_moment_score = 0;
+    let black_new_moment_score = 0;
+    if (curPlayer == "white"){
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toLowerCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                enemyPiece = curBoard[x][y];
+                                if (enemyPiece != "."){
+                                    if (enemyPiece === enemyPiece.toUpperCase()){
+                                        if (validateMovement([i, j], [x, y])){
+                                            white_new_moment_score += piecesThreatScores[enemyPiece];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        setScore(white_new_moment_score);
+    }
+    else if (curPlayer == "black"){
+        for (let i=0; i<8; i+=1){
+            for (let j=0; j<8; j+=1){
+                boardPiece = curBoard[i][j];
+                if (boardPiece != "."){
+                    if (boardPiece === boardPiece.toUpperCase()){
+                        for (let x=0; x<8; x+=1){
+                            for (let y=0; y<8; y+=1){
+                                enemyPiece = curBoard[x][y];
+                                if (enemyPiece != "."){
+                                    if (enemyPiece === enemyPiece.toLowerCase()){
+                                        if (validateMovement([i, j], [x, y])){
+                                            black_new_moment_score += piecesThreatScores[enemyPiece];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        setScore(black_new_moment_score);
+    }
+}
 
 startGame();
 setPieceHoldEvents();
