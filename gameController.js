@@ -644,31 +644,6 @@ function addPiece(piece, position){
 
     squareElement.appendChild(pieceElement);
     setPieceHoldEvents();
-    /*
-    let mouseX, mouseY = 0;
-    let hasIntervalStarted = false;
-    let movePieceInterval;
-    pieceElement.addEventListener('mousedown', function(event) {
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-    
-        if (hasIntervalStarted === false) {
-            pieceElement.style.position = 'absolute';
-
-            curHeldPiece = pieceElement;
-            const curHeldPieceStringPosition = pieceElement.parentElement.id.split('');
-
-            curHeldPieceStartingPosition = [parseInt(curHeldPieceStringPosition[0]) - 1, parseInt(curHeldPieceStringPosition[1]) - 1];
-
-            movePieceInterval = setInterval(function() {
-                pieceElement.style.top = mouseY - pieceElement.offsetHeight / 2 + window.scrollY + 'px';
-                pieceElement.style.left = mouseX - pieceElement.offsetWidth / 2 + window.scrollX + 'px';
-            }, 1);
-    
-            hasIntervalStarted = true;
-        }
-    });
-    */
 }
 
 function PawnPromotion(endingPosition){
@@ -681,7 +656,7 @@ function PawnPromotion(endingPosition){
             selectedPiece = prompt("please select a piece:\nQueen\nRook\nBishop\nknight", "Queen");
             switch (selectedPiece) {
                 case 'Queen':
-                    curBoardcurBoard[endingPosition[0]][endingPosition[1]] = 'q';
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'q';
                     break;
                 case 'Rook':
                     curBoard[endingPosition[0]][endingPosition[1]] = 'r';
@@ -706,7 +681,7 @@ function PawnPromotion(endingPosition){
             selectedPiece = prompt("please select a piece:\nQueen\nRook\nBishop\nknight", "Queen");
             switch (selectedPiece) {
                 case 'Queen':
-                    curBoardcurBoard[endingPosition[0]][endingPosition[1]] = 'Q';
+                    curBoard[endingPosition[0]][endingPosition[1]] = 'Q';
                     break;
                 case 'Rook':
                     curBoard[endingPosition[0]][endingPosition[1]] = 'R';
