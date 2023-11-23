@@ -4,7 +4,7 @@ A chess game made with pure HTML, CSS and Javascript
 
 ## How to run
 
-1. Clone the repository with `git clone https://github.com/Zardosh/web-chess.git`
+1. Clone the repository with `git clone https://github.com/AminBidad1/web-chess.git`
 2. Open `index.html` with your browser (keep in mind that this project has only been tested with Google Chrome, and might not work properly on other browsers)
 
 ## Progress
