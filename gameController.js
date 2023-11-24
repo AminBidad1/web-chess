@@ -313,8 +313,8 @@ function validatePawnMovement(pawnColor, startingPosition, endingPosition, kishC
     if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
         isFirstMove = true;
     }
-
-    if (((endingPosition[0] == startingPosition[0] + direction || (endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove)) &&
+    let boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
+    if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
          endingPosition[1] == startingPosition[1]) || isCapture) {
             if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
                 return false;
