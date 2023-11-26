@@ -168,7 +168,10 @@ function movePiece(piece, startingPosition, endingPosition) {
     let boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
     let alreadyPiece;
     let isPawnPromotion = false;
+    let isCastling = false;
+    let castlingPosition;
     let backupPiece;
+    let index;
     if (boardPiece != '.') {
         if ((boardPiece === boardPiece.toUpperCase() && curPlayer == 'black') ||
             (boardPiece === boardPiece.toLowerCase() && curPlayer == 'white')) {
@@ -193,6 +196,22 @@ function movePiece(piece, startingPosition, endingPosition) {
                         isPawnPromotion = true;
                         backupPiece = curBoard[endingPosition[0]][endingPosition[1]];
                     }
+                    curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
+                    curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
+                    if (['K', 'k'].includes(boardPiece) && [2, -2].includes(endingPosition[1] - startingPosition[1])){
+                        castlingPosition = castling(startingPosition, endingPosition);
+                        console.log(castlingPosition);
+                        if (!castlingPosition){
+                            return;
+                        }
+                        else {
+                            isCastling = true;
+                        }
+                    }
+                    else {
+                        curBoard[startingPosition[0]][startingPosition[1]] = '.';
+                        curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
+                    }
                     checkThreats();
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                     curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
@@ -203,11 +222,21 @@ function movePiece(piece, startingPosition, endingPosition) {
                     curBoard[startingPosition[0]][startingPosition[1]] = '.';
                     curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                     showScore();
+                    index = `${startingPosition[0]}${startingPosition[1]}`;
+                    if (index in boolIndexes){
+                        boolIndexes[index] = false;
+                    }
                     destinationSquare.textContent = '';
                     if (isPawnPromotion){
                         const startingSquare = document.getElementById(`${startingPosition[0] + 1}${startingPosition[1] + 1}`);
                         startingSquare.textContent = '';
                         addPiece(backupPiece, endingPosition);
+                    }
+                    else if (isCastling){
+                        const startingSquare = document.getElementById(`${castlingPosition[0][0]+1}${castlingPosition[0][1]+1}`);
+                        startingSquare.textContent = '';
+                        addPiece(castlingPosition[2], castlingPosition[1]);
+                        destinationSquare.appendChild(piece);
                     }
                     else {
                         destinationSquare.appendChild(piece);
@@ -268,7 +297,7 @@ function validateRookMovement(startingPosition, endingPosition, kishCheck = fals
 }
 
 function validateKingMovement(startingPosition, endingPosition, kishCheck = false) {
-    if ([-1, 0, 1].includes(endingPosition[0] - startingPosition[0]) && [-1, 0, 1].includes(endingPosition[1] - startingPosition[1])) {
+    if ([-1, 0, 1].includes(endingPosition[0] - startingPosition[0]) && [-2, -1, 0, 1, 2].includes(endingPosition[1] - startingPosition[1])) {
         if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
             return false;
         }
@@ -701,6 +730,68 @@ function PawnPromotion(endingPosition){
         return true;
     }
     return false;
+}
+
+let boolIndexes = {
+    "00": true,
+    "07": true,
+    "04": true,
+    "70": true,
+    "74": true,
+    "77": true
+}
+let indexToIndex = {
+    "04-2": [0, 3],
+    "042": [0, 5],
+    "74-2": [7, 3],
+    "742": [7, 5]
+}
+let castlingValues = [
+    ['K', '04', '07', 2, [0, 4], [0, 5], [0, 6], [0, 7], 'R'],
+    ['K', '04', '00', -2, [0, 4], [0, 3], [0, 2], [0, 0], 'R'],
+    ['k', '74', '77', 2, [7, 4], [7, 5], [7, 6], [7, 7], 'r'],
+    ['k', '74', '70', -2, [7, 4], [7, 3], [7, 2], [7, 0], 'r']
+]
+
+function castling(startingPosition, endingPosition){
+    let index = `${startingPosition[0]}${startingPosition[1]}`;
+    let boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
+    let destinationIndex;
+    let alreadyPiece;
+    let difference;
+    let cValue;
+    for (x in castlingValues){
+        cValue = castlingValues[x];
+        console.log(cValue);
+        if (boardPiece == cValue[0]){
+            if (index == cValue[1]){
+                if (boolIndexes[index]){
+                    difference = endingPosition[1] - startingPosition[1];
+                    if (difference == cValue[3] && boolIndexes[cValue[2]]){
+                        destinationIndex = indexToIndex[index + difference.toString()];
+                        if (validateMovement(cValue[7], destinationIndex)){
+                            if (!isKish()){
+                                curBoard[cValue[4][0]][cValue[4][1]] = '.';
+                                alreadyPiece = curBoard[cValue[5][0]][cValue[5][1]];
+                                curBoard[cValue[5][0]][cValue[5][1]] = cValue[0];
+                                if (!isKish()){
+                                    curBoard[cValue[5][0]][cValue[5][1]] = '.';
+                                    alreadyPiece = curBoard[cValue[6][0]][cValue[6][1]];
+                                    curBoard[cValue[6][0]][cValue[6][1]] = cValue[0];
+                                    if (!isKish()){
+                                        curBoard[cValue[5][0]][cValue[5][1]] = cValue[8];
+                                        curBoard[cValue[7][0]][cValue[7][0]] = '.';
+                                        return [cValue[7], destinationIndex, cValue[8]];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+        
 }
 
 startGame();
