@@ -94,10 +94,15 @@ function getPieceImageSource(piece) {
 
 function setPieceHoldEvents() {
     let mouseX, mouseY = 0;
+    let touchX, touchY = 0;
 
     document.addEventListener('mousemove', function(event) {
         mouseX = event.clientX;
         mouseY = event.clientY;
+    });
+    document.addEventListener('touchmove', function(event) {
+        touchX = event.touches[0].clientX;
+        touchY = event.touches[0].clientY;
     });
 
     let pieces = document.getElementsByClassName('piece');
@@ -125,6 +130,26 @@ function setPieceHoldEvents() {
                 hasIntervalStarted = true;
             }
         });
+        piece.addEventListener('touchstart', function(event) {
+            touchX = event.touches[0].clientX;
+            touchY = event.touches[0].clientY;
+        
+            if (hasIntervalStarted === false) {
+                piece.style.position = 'absolute';
+
+                curHeldPiece = piece;
+                const curHeldPieceStringPosition = piece.parentElement.id.split('');
+
+                curHeldPieceStartingPosition = [parseInt(curHeldPieceStringPosition[0]) - 1, parseInt(curHeldPieceStringPosition[1]) - 1];
+
+                movePieceInterval = setInterval(function() {
+                    piece.style.top = touchY - piece.offsetHeight / 2 + window.scrollY + 'px';
+                    piece.style.left = touchX - piece.offsetWidth / 2 + window.scrollX + 'px';
+                }, 1);
+        
+                hasIntervalStarted = true;
+            }
+        });
     }
         
     document.addEventListener('mouseup', function(event) {
@@ -137,6 +162,39 @@ function setPieceHoldEvents() {
                 (event.clientY > boardElement.offsetTop - window.scrollY && event.clientY < boardElement.offsetTop + boardElement.offsetHeight - window.scrollY)) {
                     const mousePositionOnBoardX = event.clientX - boardElement.offsetLeft + window.scrollX;
                     const mousePositionOnBoardY = event.clientY - boardElement.offsetTop + window.scrollY;
+
+                    const boardBorderSize = parseInt(getComputedStyle(document.querySelector('.board'), null)
+                                                .getPropertyValue('border-left-width')
+                                                .split('px')[0]);
+
+                    const xPosition = Math.floor((mousePositionOnBoardX - boardBorderSize) / document.getElementsByClassName('square')[0].offsetWidth);
+                    const yPosition = Math.floor((mousePositionOnBoardY - boardBorderSize) / document.getElementsByClassName('square')[0].offsetHeight);
+
+                    const pieceReleasePosition = [yPosition, xPosition];
+
+                    if (!(pieceReleasePosition[0] == curHeldPieceStartingPosition[0] && pieceReleasePosition[1] == curHeldPieceStartingPosition[1])) {
+                        if (validateMovement(curHeldPieceStartingPosition, pieceReleasePosition)) {
+                            movePiece(curHeldPiece, curHeldPieceStartingPosition, pieceReleasePosition);
+                        }
+                    }
+                }
+
+            curHeldPiece.style.position = 'static';
+            curHeldPiece = null;
+            curHeldPieceStartingPosition = null;
+        }
+    
+        hasIntervalStarted = false;
+    });
+    document.addEventListener('touchend', function(event) {
+        window.clearInterval(movePieceInterval);
+
+        if (curHeldPiece != null) {
+            const boardElement = document.querySelector('.board');
+            if ((touchX > boardElement.offsetLeft - window.scrollX && touchX < boardElement.offsetLeft + boardElement.offsetWidth - window.scrollX) &&
+                (touchY > boardElement.offsetTop - window.scrollY && touchY < boardElement.offsetTop + boardElement.offsetHeight - window.scrollY)) {
+                    const mousePositionOnBoardX = touchX - boardElement.offsetLeft + window.scrollX;
+                    const mousePositionOnBoardY = touchY - boardElement.offsetTop + window.scrollY;
 
                     const boardBorderSize = parseInt(getComputedStyle(document.querySelector('.board'), null)
                                                 .getPropertyValue('border-left-width')
