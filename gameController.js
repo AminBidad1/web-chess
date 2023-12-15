@@ -3,6 +3,7 @@ let curPlayer;
 
 let curHeldPiece;
 let curHeldPieceStartingPosition;
+let playWithBot = false;
 
 let white_score = 0;
 let black_score = 0;
@@ -192,7 +193,11 @@ function setPieceHoldEvents() {
 
                     if (!(pieceReleasePosition[0] == curHeldPieceStartingPosition[0] && pieceReleasePosition[1] == curHeldPieceStartingPosition[1])) {
                         if (validateMovement(curHeldPieceStartingPosition, pieceReleasePosition)) {
-                            movePiece(curHeldPiece, curHeldPieceStartingPosition, pieceReleasePosition);
+                            if (movePiece(curHeldPiece, curHeldPieceStartingPosition, pieceReleasePosition)){
+                                if (playWithBot){
+                                    play();
+                                }
+                            }
                         }
                     }
                 }
@@ -225,7 +230,11 @@ function setPieceHoldEvents() {
 
                     if (!(pieceReleasePosition[0] == curHeldPieceStartingPosition[0] && pieceReleasePosition[1] == curHeldPieceStartingPosition[1])) {
                         if (validateMovement(curHeldPieceStartingPosition, pieceReleasePosition)) {
-                            movePiece(curHeldPiece, curHeldPieceStartingPosition, pieceReleasePosition);
+                            if (movePiece(curHeldPiece, curHeldPieceStartingPosition, pieceReleasePosition)){
+                                if (playWithBot){
+                                    play();
+                                }
+                            }
                         }
                     }
                 }
@@ -265,6 +274,7 @@ function movePiece(piece, startingPosition, endingPosition) {
                             alert("White Won!");
                         }
                     }
+                    return false;
                 }
                 else {
                     const destinationSquare = document.getElementById(`${endingPosition[0] + 1}${endingPosition[1] + 1}`);
@@ -278,7 +288,7 @@ function movePiece(piece, startingPosition, endingPosition) {
                         castlingPosition = castling(startingPosition, endingPosition);
                         console.log(castlingPosition);
                         if (!castlingPosition){
-                            return;
+                            return false;
                         }
                         else {
                             isCastling = true;
@@ -286,10 +296,10 @@ function movePiece(piece, startingPosition, endingPosition) {
                             curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                         }
                     }
-                    checkThreats();
+                    setScore(checkThreats());
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                     curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
-                    kill(endingPosition);
+                    setScore(kill(endingPosition));
                     if (isPawnPromotion){
                         boardPiece = backupPiece;
                     }
@@ -321,6 +331,7 @@ function movePiece(piece, startingPosition, endingPosition) {
                     } else {
                         curPlayer = 'white';
                     }
+                    return true;
                 }
         }
     }
@@ -416,7 +427,13 @@ function validatePawnMovement(pawnColor, startingPosition, endingPosition, kishC
     if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
         isFirstMove = true;
     }
-    let boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
+    let boardPiece;
+    try{
+        boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
+    }
+    catch {
+        console.log(startingPosition[0]+direction, startingPosition[1]);
+    }
     if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
          endingPosition[1] == startingPosition[1]) || isCapture) {
             if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
@@ -549,7 +566,10 @@ function showScore(){
 function kill(endingPosition){
     let enemyPiece = curBoard[endingPosition[0]][endingPosition[1]];
     if (enemyPiece != '.'){
-        setScore(piecesKillScores[enemyPiece]);
+        return piecesKillScores[enemyPiece];
+    }
+    else {
+        return 0;
     }
 }
 
@@ -708,7 +728,7 @@ function checkThreats(){
                 }
             }
         }
-        setScore(white_new_moment_score);
+        return white_new_moment_score;
     }
     else if (curPlayer == "black"){
         for (let i=0; i<8; i+=1){
@@ -732,7 +752,7 @@ function checkThreats(){
                 }
             }
         }
-        setScore(black_new_moment_score);
+        return black_new_moment_score;
     }
 }
 
@@ -868,6 +888,148 @@ function castling(startingPosition, endingPosition){
         
 }
 
+function sortFunction(a, b) {
+    if (a[2] === b[2]) {
+        return 0;
+    }
+    else {
+        return (a[2] < b[2]) ? -1 : 1;
+    }
+}
+
+function whitePlay(){
+    let boardPiece;
+    let tempSocre = 0;
+    let maxPositions = [];
+    let maxScore = 0;
+    let alreadyPiece;
+    for (let i=0; i<8; i++){
+        for (let j=0; j<8; j++){
+            boardPiece = curBoard[i][j];
+            if (boardPiece != '.' && boardPiece == boardPiece.toLowerCase()){
+                for (let x=0; x<8; x++){
+                    for (let y=0; y<8; y++){
+                        if (i != x || j != y){
+                            if (validateMovement([i, j], [x, y])){
+                                alreadyPiece = curBoard[x][y];
+                                tempSocre = kill([x, y]);
+                                curBoard[i][j] = '.';
+                                curBoard[x][y] = boardPiece;
+                                if (!isKish()){
+                                    tempSocre += checkThreats();
+                                    curPlayer = 'black';
+                                    if (isKish()){
+                                        curBoard[i][j] = boardPiece;
+                                        curBoard[x][y] = alreadyPiece;
+                                        if (isCheckMate()){
+                                            tempSocre += 100000;
+                                        }
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                    }
+                                    curPlayer = 'white';
+                                    if (tempSocre >= maxScore){
+                                        maxScore = tempSocre;
+                                        maxPositions = [[i, j], [x, y]];
+                                    }
+                                    //maxPositions.push([[i, j], [x, y], tempSocre]);
+                                }
+                                curBoard[i][j] = boardPiece;
+                                curBoard[x][y] = alreadyPiece;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return maxScore;
+}
+
+
+function play(){
+    let boardPiece;
+    let tempSocre = 0;
+    let maxPositions = [];
+    let alreadyPiece;
+    for (let i=0; i<8; i++){
+        for (let j=0; j<8; j++){
+            boardPiece = curBoard[i][j];
+            if (boardPiece != '.' && boardPiece == boardPiece.toUpperCase()){
+                for (let x=0; x<8; x++){
+                    for (let y=0; y<8; y++){
+                        if (i != x || j != y){
+                            if (validateMovement([i, j], [x, y])){
+                                alreadyPiece = curBoard[x][y];
+                                tempSocre = kill([x, y]);
+                                curBoard[i][j] = '.';
+                                curBoard[x][y] = boardPiece;
+                                if (!isKish()){
+                                    tempSocre += checkThreats();
+                                    curPlayer = 'white';
+                                    if (isKish()){
+                                        curBoard[i][j] = boardPiece;
+                                        curBoard[x][y] = alreadyPiece;
+                                        if (isCheckMate()){
+                                            tempSocre += 100000;
+                                        }
+                                        curBoard[i][j] = '.';
+                                        curBoard[x][y] = boardPiece;
+                                    }
+                                    tempSocre -= whitePlay();
+                                    curPlayer = 'black';
+                                    maxPositions.push([[i, j], [x, y], tempSocre]);
+                                }
+                                curBoard[i][j] = boardPiece;
+                                curBoard[x][y] = alreadyPiece;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    maxPositions.sort(sortFunction);
+    let length = maxPositions.length;
+    let canMove = false;
+    let maxPosition;
+    let starterPosition;
+    let endingPosition;
+    let squareElement;
+    let piece;
+    do {
+        try {
+            maxPosition = maxPositions[length-1]
+            starterPosition = [maxPosition[0][0], maxPosition[0][1]];
+            endingPosition = [maxPosition[1][0], maxPosition[1][1]];
+            squareElement = document.getElementById(`${starterPosition[0]+1}${starterPosition[1]+1}`);
+            piece = squareElement.firstChild;
+            if (movePiece(piece, starterPosition, endingPosition)){
+                canMove = true;
+                break;
+            }
+            else {
+                maxPositions.pop();
+                length--;
+            }
+        }
+        catch {
+            alert("White Won!");
+            canMove = true;
+            return;
+        }
+    } while (!canMove);
+}
+
+
+function main() {
+    let likeBot = prompt("do you want to play with bot ? \nyes\nno");
+    if (likeBot == 'yes'){
+        playWithBot = true;
+    }
+}
+
+main();
 disablePageRefreshFacility();
 startGame();
 setPieceHoldEvents();
