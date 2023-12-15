@@ -272,9 +272,9 @@ function movePiece(piece, startingPosition, endingPosition) {
                         isPawnPromotion = true;
                         backupPiece = curBoard[endingPosition[0]][endingPosition[1]];
                     }
-                    curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
-                    curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
-                    if (['K', 'k'].includes(boardPiece) && [2, -2].includes(endingPosition[1] - startingPosition[1])){
+                    else if (['K', 'k'].includes(boardPiece) && [2, -2].includes(endingPosition[1] - startingPosition[1])){
+                        curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
+                        curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
                         castlingPosition = castling(startingPosition, endingPosition);
                         console.log(castlingPosition);
                         if (!castlingPosition){
@@ -282,11 +282,9 @@ function movePiece(piece, startingPosition, endingPosition) {
                         }
                         else {
                             isCastling = true;
+                            curBoard[startingPosition[0]][startingPosition[1]] = '.';
+                            curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                         }
-                    }
-                    else {
-                        curBoard[startingPosition[0]][startingPosition[1]] = '.';
-                        curBoard[endingPosition[0]][endingPosition[1]] = boardPiece;
                     }
                     checkThreats();
                     curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
