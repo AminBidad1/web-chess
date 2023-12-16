@@ -14,10 +14,10 @@ A chess game made with pure HTML, CSS and Javascript
 - Make piece stick to cursor on mouse hold: :white_check_mark:
 - Make piece snap to grid on mouse release: :white_check_mark:
 - Piece movement restrictions: :white_check_mark:
-- Check restrictions: :x:
-- Checkmate logic: :x:
-- Pawn promotion logic: :x:
-- Castling logic: :x:
+- Check restrictions: :white_check_mark:
+- Checkmate logic: :white_check_mark:
+- Pawn promotion logic: :white_check_mark:
+- Castling logic: :white_check_mark:
 - En passant logic: :x:
 - Stalemate logic: :x:
 - Drawing logic (threefold repetition, fifty-move rule, impossibility of checkmate): :x:
@@ -26,4 +26,4 @@ A chess game made with pure HTML, CSS and Javascript
 - Offer draw/resign: :x:
 - Board color customizations: :x:
 - Piece image customizations: :x:
-- Implement Stockfish (or some other chess engine) and create a Player vs. Computer mode: :x:
+- Implement Stockfish (or some other chess engine) and create a Player vs. Computer mode: :white_check_mark:
