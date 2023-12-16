@@ -286,7 +286,6 @@ function movePiece(piece, startingPosition, endingPosition) {
                         curBoard[endingPosition[0]][endingPosition[1]] = alreadyPiece;
                         curBoard[startingPosition[0]][startingPosition[1]] = boardPiece;
                         castlingPosition = castling(startingPosition, endingPosition);
-                        console.log(castlingPosition);
                         if (!castlingPosition){
                             return false;
                         }
@@ -338,21 +337,26 @@ function movePiece(piece, startingPosition, endingPosition) {
 }
 
 function validateMovement(startingPosition, endingPosition, kishCheck = false) {
-    const boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
-    
-    switch (boardPiece) {
-        case 'r':
-        case 'R': return validateRookMovement(startingPosition, endingPosition, kishCheck);
-        case 'n':
-        case 'N': return validateKnightMovement(startingPosition, endingPosition, kishCheck);
-        case 'b':
-        case 'B': return validateBishopMovement(startingPosition, endingPosition, kishCheck);
-        case 'q':
-        case 'Q': return validateQueenMovement(startingPosition, endingPosition, kishCheck);
-        case 'k': 
-        case 'K': return validateKingMovement(startingPosition, endingPosition, kishCheck);
-        case 'p': return validatePawnMovement('white', startingPosition, endingPosition, kishCheck);
-        case 'P': return validatePawnMovement('black', startingPosition, endingPosition, kishCheck);
+    try {
+        const boardPiece = curBoard[startingPosition[0]][startingPosition[1]];
+        
+        switch (boardPiece) {
+            case 'r':
+            case 'R': return validateRookMovement(startingPosition, endingPosition, kishCheck);
+            case 'n':
+            case 'N': return validateKnightMovement(startingPosition, endingPosition, kishCheck);
+            case 'b':
+            case 'B': return validateBishopMovement(startingPosition, endingPosition, kishCheck);
+            case 'q':
+            case 'Q': return validateQueenMovement(startingPosition, endingPosition, kishCheck);
+            case 'k': 
+            case 'K': return validateKingMovement(startingPosition, endingPosition, kishCheck);
+            case 'p': return validatePawnMovement('white', startingPosition, endingPosition, kishCheck);
+            case 'P': return validatePawnMovement('black', startingPosition, endingPosition, kishCheck);
+        }
+    }
+    catch {
+        return false;
     }
 }
 
@@ -382,7 +386,10 @@ function validateRookMovement(startingPosition, endingPosition, kishCheck = fals
 }
 
 function validateKingMovement(startingPosition, endingPosition, kishCheck = false) {
-    if ([-1, 0, 1].includes(endingPosition[0] - startingPosition[0]) && [-2, -1, 0, 1, 2].includes(endingPosition[1] - startingPosition[1])) {
+    if (([-1, 0, 1].includes(endingPosition[0] - startingPosition[0]) &&
+        [-1, 0, 1].includes(endingPosition[1] - startingPosition[1])) ||
+        (endingPosition[0] == startingPosition[0] &&
+        [-2, 2].includes(endingPosition[1] - startingPosition[1]))) {
         if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
             return false;
         }
@@ -412,39 +419,38 @@ function validatePawnMovement(pawnColor, startingPosition, endingPosition, kishC
     direction = pawnColor == 'black' ? 1 : -1;
 
     let isCapture = false;
-
-    if (endingPosition[0] == startingPosition[0] + direction &&
-        [startingPosition[1] - 1, startingPosition[1] + 1].includes(endingPosition[1])) {
-            // validate if is en passant
-            if (isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                isCapture = true;
+    try {
+        if (endingPosition[0] == startingPosition[0] + direction &&
+            [startingPosition[1] - 1, startingPosition[1] + 1].includes(endingPosition[1])) {
+                // validate if is en passant
+                if (isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                    isCapture = true;
+                }
             }
+
+        // validate if is promotion
+        let isFirstMove = false;
+
+        if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
+            isFirstMove = true;
         }
-
-    // validate if is promotion
-    let isFirstMove = false;
-
-    if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
-        isFirstMove = true;
-    }
-    let boardPiece;
-    try{
+        let boardPiece;
         boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
+        if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
+            endingPosition[1] == startingPosition[1]) || isCapture) {
+                if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                    return false;
+                } else if (!isCapture && isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                    return false;
+                }
+
+                // validate if move puts own king in check
+                return true;
+        } else {
+            return false;
+        }
     }
     catch {
-        console.log(startingPosition[0]+direction, startingPosition[1]);
-    }
-    if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
-         endingPosition[1] == startingPosition[1]) || isCapture) {
-            if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                return false;
-            } else if (!isCapture && isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                return false;
-            }
-
-            // validate if move puts own king in check
-            return true;
-    } else {
         return false;
     }
 }
@@ -597,16 +603,28 @@ function isCheckMate(){
                                 if (x != i || y != j){
                                     if (validateMovement([i, j], [x, y])){
                                         alreadyPiece = curBoard[x][y];
-                                        curBoard[i][j] = '.';
-                                        curBoard[x][y] = boardPiece;
-                                        if (isKish()){
-                                            curBoard[i][j] = boardPiece;
-                                            curBoard[x][y] = alreadyPiece;
-                                        }
-                                        else {
-                                            curBoard[i][j] = boardPiece;
-                                            curBoard[x][y] = alreadyPiece;
-                                            return false;
+                                        if (!(['K', 'k'].includes(boardPiece) &&
+                                            [2, -2].includes(y - j) &&
+                                            x == i && 
+                                            ['k', 'K'].includes(alreadyPiece))){
+                                                curBoard[i][j] = '.';
+                                                curBoard[x][y] = boardPiece;
+                                                if (
+                                                    ['K', 'k'].includes(boardPiece) &&
+                                                    [2, -2].includes(y - j) &&
+                                                    x == i) {
+                                                    curBoard[i][j] = boardPiece;
+                                                    curBoard[x][y] = alreadyPiece;
+                                                }
+                                                else if (isKish()){
+                                                    curBoard[i][j] = boardPiece;
+                                                    curBoard[x][y] = alreadyPiece;
+                                                }
+                                                else {
+                                                    curBoard[i][j] = boardPiece;
+                                                    curBoard[x][y] = alreadyPiece;
+                                                    return false;
+                                                }
                                         }
                                     }
                                 }
@@ -628,16 +646,28 @@ function isCheckMate(){
                                 if (x != i || y != j){
                                     if (validateMovement([i, j], [x, y])){
                                         alreadyPiece = curBoard[x][y];
-                                        curBoard[i][j] = '.';
-                                        curBoard[x][y] = boardPiece;
-                                        if (isKish()){
-                                            curBoard[i][j] = boardPiece;
-                                            curBoard[x][y] = alreadyPiece;
-                                        }
-                                        else {
-                                            curBoard[i][j] = boardPiece;
-                                            curBoard[x][y] = alreadyPiece;
-                                            return false;
+                                        if (!(['K', 'k'].includes(boardPiece) &&
+                                            [2, -2].includes(y - j) &&
+                                            x == i && 
+                                            ['k', 'K'].includes(alreadyPiece))){
+                                            curBoard[i][j] = '.';
+                                            curBoard[x][y] = boardPiece;
+                                            if (
+                                                ['K', 'k'].includes(boardPiece) &&
+                                                [2, -2].includes(y - j) &&
+                                                x == i) {
+                                                curBoard[i][j] = boardPiece;
+                                                curBoard[x][y] = alreadyPiece;
+                                            }
+                                            else if (isKish()){
+                                                curBoard[i][j] = boardPiece;
+                                                curBoard[x][y] = alreadyPiece;
+                                            }
+                                            else {
+                                                curBoard[i][j] = boardPiece;
+                                                curBoard[x][y] = alreadyPiece;
+                                                return false;
+                                            }
                                         }
                                     }
                                 }
@@ -669,7 +699,11 @@ function isKish(){
                 if (boardPiece != "."){
                     if (boardPiece === boardPiece.toUpperCase()){
                         if (validateMovement([i, j], king_position, kishCheck=true)){
-                            return true;
+                            if (!(['K', 'k'].includes(boardPiece) &&
+                                [2, -2].includes(king_position[1] - j) &&
+                                king_position[0] == i)){
+                                return true;
+                            }
                         }
                     }
                 }
@@ -691,7 +725,11 @@ function isKish(){
                 if (boardPiece != "."){
                     if (boardPiece === boardPiece.toLowerCase()){
                         if (validateMovement([i, j], king_position, kishCheck=true)){
-                            return true;
+                            if (!(['K', 'k'].includes(boardPiece) &&
+                                [2, -2].includes(king_position[1] - j) &&
+                                king_position[0] == i)){
+                                return true;
+                            }
                         }
                     }
                 }
@@ -772,7 +810,7 @@ function addPiece(piece, position){
 function PawnPromotion(endingPosition){
     let boardPiece = curBoard[endingPosition[0]][endingPosition[1]];
     let selectedPiece;
-    let isValid = false
+    let isValid = false;
     if (endingPosition[0] == 0 && boardPiece == 'p'){
         while (!isValid){
             isValid = true;
@@ -799,6 +837,10 @@ function PawnPromotion(endingPosition){
         return true;
     }
     else if (endingPosition[0] == 7 && boardPiece == 'P'){
+        if (playWithBot){
+            curBoard[endingPosition[0]][endingPosition[1]] = 'Q';
+            return true;
+        }
         while (!isValid){
             isValid = true;
             selectedPiece = prompt("please select a piece:\nQueen\nRook\nBishop\nknight", "Queen");
@@ -874,7 +916,7 @@ function castling(startingPosition, endingPosition){
                                     curBoard[cValue[6][0]][cValue[6][1]] = cValue[0];
                                     if (!isKish()){
                                         curBoard[cValue[5][0]][cValue[5][1]] = cValue[8];
-                                        curBoard[cValue[7][0]][cValue[7][0]] = '.';
+                                        curBoard[cValue[7][0]][cValue[7][1]] = '.';
                                         return [cValue[7], destinationIndex, cValue[8]];
                                     }
                                 }
