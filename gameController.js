@@ -4,6 +4,8 @@ let curPlayer;
 let curHeldPiece;
 let curHeldPieceStartingPosition;
 let playWithBot = false;
+let numberMovesBot = 0;
+let levelBot = 0;
 
 let white_score = 0;
 let black_score = 0;
@@ -355,7 +357,8 @@ function validateMovement(startingPosition, endingPosition, kishCheck = false) {
             case 'P': return validatePawnMovement('black', startingPosition, endingPosition, kishCheck);
         }
     }
-    catch {
+    catch(error) {
+        console.log(error.message, error.lineNumber);
         return false;
     }
 }
@@ -419,38 +422,36 @@ function validatePawnMovement(pawnColor, startingPosition, endingPosition, kishC
     direction = pawnColor == 'black' ? 1 : -1;
 
     let isCapture = false;
-    try {
-        if (endingPosition[0] == startingPosition[0] + direction &&
-            [startingPosition[1] - 1, startingPosition[1] + 1].includes(endingPosition[1])) {
-                // validate if is en passant
-                if (isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                    isCapture = true;
-                }
+    if (endingPosition[0] == startingPosition[0] + direction &&
+        [startingPosition[1] - 1, startingPosition[1] + 1].includes(endingPosition[1])) {
+            // validate if is en passant
+            if (isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                isCapture = true;
+            }
+        }
+
+    // validate if is promotion
+    let isFirstMove = false;
+
+    if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
+        isFirstMove = true;
+    }
+    let boardPiece;
+    if (!((startingPosition[0] + direction) in curBoard)){
+        return false;
+    }
+    boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
+    if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
+        endingPosition[1] == startingPosition[1]) || isCapture) {
+            if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                return false;
+            } else if (!isCapture && isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
+                return false;
             }
 
-        // validate if is promotion
-        let isFirstMove = false;
-
-        if ((pawnColor == 'white' && startingPosition[0] == 6) || (pawnColor == 'black' && startingPosition[0] == 1)) {
-            isFirstMove = true;
-        }
-        let boardPiece;
-        boardPiece = curBoard[startingPosition[0]+direction][startingPosition[1]];
-        if (((endingPosition[0] == startingPosition[0] + direction || ((endingPosition[0] == startingPosition[0] + direction * 2 && isFirstMove) && boardPiece == '.')) &&
-            endingPosition[1] == startingPosition[1]) || isCapture) {
-                if (isFriendlyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                    return false;
-                } else if (!isCapture && isEnemyPieceOnEndingPosition(endingPosition, kishCheck)) {
-                    return false;
-                }
-
-                // validate if move puts own king in check
-                return true;
-        } else {
-            return false;
-        }
-    }
-    catch {
+            // validate if move puts own king in check
+            return true;
+    } else {
         return false;
     }
 }
@@ -898,7 +899,6 @@ function castling(startingPosition, endingPosition){
     let cValue;
     for (x in castlingValues){
         cValue = castlingValues[x];
-        console.log(cValue);
         if (boardPiece == cValue[0]){
             if (index == cValue[1]){
                 if (boolIndexes[index]){
@@ -942,7 +942,7 @@ function sortFunction(a, b) {
 function whitePlay(){
     let boardPiece;
     let tempSocre = 0;
-    let maxPositions = [];
+    let maxPosition = [];
     let maxScore = 0;
     let alreadyPiece;
     for (let i=0; i<8; i++){
@@ -958,23 +958,20 @@ function whitePlay(){
                                 curBoard[i][j] = '.';
                                 curBoard[x][y] = boardPiece;
                                 if (!isKish()){
-                                    tempSocre += checkThreats();
+                                    if (numberMovesBot > 0){
+                                        tempSocre += checkThreats();
+                                    }
                                     curPlayer = 'black';
                                     if (isKish()){
-                                        curBoard[i][j] = boardPiece;
-                                        curBoard[x][y] = alreadyPiece;
                                         if (isCheckMate()){
                                             tempSocre += 100000;
                                         }
-                                        curBoard[i][j] = '.';
-                                        curBoard[x][y] = boardPiece;
                                     }
                                     curPlayer = 'white';
                                     if (tempSocre >= maxScore){
                                         maxScore = tempSocre;
-                                        maxPositions = [[i, j], [x, y]];
+                                        maxPosition = [[i, j], [x, y], maxScore];
                                     }
-                                    //maxPositions.push([[i, j], [x, y], tempSocre]);
                                 }
                                 curBoard[i][j] = boardPiece;
                                 curBoard[x][y] = alreadyPiece;
@@ -985,14 +982,14 @@ function whitePlay(){
             }
         }
     }
-    return maxScore;
+    return maxPosition;
 }
 
-
-function play(){
+function blackPlay(){
     let boardPiece;
     let tempSocre = 0;
-    let maxPositions = [];
+    let maxPosition = [];
+    let maxScore = 0;
     let alreadyPiece;
     for (let i=0; i<8; i++){
         for (let j=0; j<8; j++){
@@ -1007,21 +1004,143 @@ function play(){
                                 curBoard[i][j] = '.';
                                 curBoard[x][y] = boardPiece;
                                 if (!isKish()){
-                                    tempSocre += checkThreats();
+                                    if (numberMovesBot > 0){
+                                        tempSocre += checkThreats();
+                                    }
                                     curPlayer = 'white';
                                     if (isKish()){
-                                        curBoard[i][j] = boardPiece;
-                                        curBoard[x][y] = alreadyPiece;
                                         if (isCheckMate()){
                                             tempSocre += 100000;
                                         }
-                                        curBoard[i][j] = '.';
-                                        curBoard[x][y] = boardPiece;
                                     }
-                                    tempSocre -= whitePlay();
                                     curPlayer = 'black';
+                                    if (tempSocre >= maxScore){
+                                        maxScore = tempSocre;
+                                        maxPosition = [[i, j], [x, y], maxScore];
+                                    }
+                                }
+                                curBoard[i][j] = boardPiece;
+                                curBoard[x][y] = alreadyPiece;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return maxPosition;
+}
+
+
+function play(){
+    if (numberMovesBot == 0){
+        let squareElement = document.getElementById(`${2}${5}`);
+        let piece = squareElement.firstChild;
+        if (movePiece(piece, [1, 4], [3, 4])){
+            numberMovesBot++;
+            return;
+        }
+    }
+    let boardPiece;
+    let tempSocre = 0;
+    let maxPositions = [];
+    let alreadyPiece;
+    let predictMovement1, predictMovement2, predictMovement3, predictMovement4,
+    predictMovement5;
+    let boardPiece2, alreadyPiece2, boardPiece3, alreadyPiece3,
+    boardPiece4, alreadyPiece4, boardPiece5, alreadyPiece5;
+    for (let i=0; i<8; i++){
+        for (let j=0; j<8; j++){
+            boardPiece = curBoard[i][j];
+            if (boardPiece != '.' && boardPiece == boardPiece.toUpperCase()){
+                for (let x=0; x<8; x++){
+                    for (let y=0; y<8; y++){
+                        if (i != x || j != y){
+                            if (validateMovement([i, j], [x, y])){
+                                alreadyPiece = curBoard[x][y];
+                                tempSocre = kill([x, y]);
+                                curBoard[i][j] = '.';
+                                curBoard[x][y] = boardPiece;
+                                if (!isKish()){
+                                    if (numberMovesBot > 0){
+                                        tempSocre += checkThreats();
+                                    }
+                                    curPlayer = 'white';
+                                    if (isKish()){
+                                        if (isCheckMate()){
+                                            tempSocre += 1000000000;
+                                        }
+                                    }
+                                    predictMovement1 = whitePlay();
+                                    if (!predictMovement1.length){
+                                        tempSocre += 100000000;
+                                    }
+                                    else {
+                                        tempSocre -= predictMovement1[2];
+                                        if (levelBot > 1){
+                                            boardPiece2 = curBoard[predictMovement1[0][0]][predictMovement1[0][1]];
+                                            alreadyPiece2 = curBoard[predictMovement1[1][0]][predictMovement1[1][1]];
+                                            curBoard[predictMovement1[0][0]][predictMovement1[0][1]] = '.';
+                                            curBoard[predictMovement1[1][0]][predictMovement1[1][1]] = boardPiece2;
+                                            curPlayer = 'black';
+                                            predictMovement2 = blackPlay();
+                                            if (!predictMovement2.length){
+                                                tempSocre -= 10000000;
+                                            }
+                                            else {
+                                                tempSocre += predictMovement2[2];
+                                                boardPiece3 = curBoard[predictMovement2[0][0]][predictMovement2[0][1]];
+                                                alreadyPiece3 = curBoard[predictMovement2[1][0]][predictMovement2[1][1]];
+                                                curBoard[predictMovement2[0][0]][predictMovement2[0][1]] = '.';
+                                                curBoard[predictMovement2[1][0]][predictMovement2[1][1]] = boardPiece3;
+                                                curPlayer = 'white';
+                                                predictMovement3 = whitePlay();
+                                                if (!predictMovement3.length){
+                                                    tempSocre += 1000000;
+                                                }
+                                                else {
+                                                    tempSocre -= predictMovement3[2];
+                                                    if (levelBot > 2){
+                                                        boardPiece4 = curBoard[predictMovement3[0][0]][predictMovement3[0][1]];
+                                                        alreadyPiece4 = curBoard[predictMovement3[1][0]][predictMovement3[1][1]];
+                                                        curBoard[predictMovement3[0][0]][predictMovement3[0][1]] = '.';
+                                                        curBoard[predictMovement3[1][0]][predictMovement3[1][1]] = boardPiece4;
+                                                        curPlayer = 'black';
+                                                        predictMovement4 = blackPlay();
+                                                        if (!predictMovement4.length){
+                                                            tempSocre -= 100000;
+                                                        }
+                                                        else {
+                                                            tempSocre += predictMovement4[2];
+                                                            boardPiece5 = curBoard[predictMovement4[0][0]][predictMovement4[0][1]];
+                                                            alreadyPiece5 = curBoard[predictMovement4[1][0]][predictMovement4[1][1]];
+                                                            curBoard[predictMovement4[0][0]][predictMovement4[0][1]] = '.';
+                                                            curBoard[predictMovement4[1][0]][predictMovement4[1][1]] = boardPiece5;
+                                                            curPlayer = 'white';
+                                                            predictMovement5 = whitePlay();
+                                                            if (!predictMovement5.length){
+                                                                tempSocre += 10000;
+                                                            }
+                                                            else {
+                                                                tempSocre -= predictMovement5[2];
+                                                            }
+                                                            curBoard[predictMovement4[0][0]][predictMovement4[0][1]] = boardPiece5;
+                                                            curBoard[predictMovement4[1][0]][predictMovement4[1][1]] = alreadyPiece5;
+                                                        }
+                                                        curBoard[predictMovement3[0][0]][predictMovement3[0][1]] = boardPiece4;
+                                                        curBoard[predictMovement3[1][0]][predictMovement3[1][1]] = alreadyPiece4;
+                                                    }
+                                                }
+                                                curBoard[predictMovement2[0][0]][predictMovement2[0][1]] = boardPiece3;
+                                                curBoard[predictMovement2[1][0]][predictMovement2[1][1]] = alreadyPiece3;
+                                            }
+                                            curBoard[predictMovement1[0][0]][predictMovement1[0][1]] = boardPiece2;
+                                            curBoard[predictMovement1[1][0]][predictMovement1[1][1]] = alreadyPiece2;
+                                        }
+                                    }
                                     maxPositions.push([[i, j], [x, y], tempSocre]);
                                 }
+                                curPlayer = 'black';
                                 curBoard[i][j] = boardPiece;
                                 curBoard[x][y] = alreadyPiece;
                             }
@@ -1047,7 +1166,9 @@ function play(){
             squareElement = document.getElementById(`${starterPosition[0]+1}${starterPosition[1]+1}`);
             piece = squareElement.firstChild;
             if (movePiece(piece, starterPosition, endingPosition)){
+                console.log(maxPosition[2]);
                 canMove = true;
+                numberMovesBot++;
                 break;
             }
             else {
@@ -1065,9 +1186,10 @@ function play(){
 
 
 function main() {
-    let likeBot = prompt("do you want to play with bot ? \nyes\nno");
+    let likeBot = prompt("do you want to play with bot ? \nyes\nno", "yes");
     if (likeBot == 'yes'){
         playWithBot = true;
+        levelBot = prompt("which level? \n1\n2\n3", 1);
     }
 }
 
